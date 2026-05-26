@@ -31,6 +31,13 @@ const hand = document.getElementById('selection-hand');
 const puck = document.getElementById('selection-puck');
 const startPrompt = document.getElementById('start-prompt');
 
+// メッセージ部分をタップ（クリック）してもゲームが始まるようにするよ
+startPrompt.addEventListener('click', () => {
+    if (!gameStarted && isPuckPlaced) {
+        startGame(selectedChar);
+    }
+});
+
 window.addEventListener('mousemove', (e) => {
     if (!gameStarted) {
         // 手のアイコン（指先）をマウスの真ん中に合わせるよ
