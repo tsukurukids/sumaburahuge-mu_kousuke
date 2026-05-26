@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>スマブラ風アクションゲーム - プロトタイプ</title>
+    <!-- PWA（アプリ化）のための設定ファイルだよ -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050505">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- 操作方法（そうさほうほう）を表示するボードだよ -->
+    <div id="controls" class="controls" style="display: none;">
+        <h3>🎮 操作方法</h3>
+        <p><strong>矢印（←↑→↓）：</strong> うごく・ジャンプ</p>
+        <p><strong>Space：</strong> 通常攻撃（こうげき）</p>
+        <p><strong>W / A / S / D：</strong> スマッシュ攻撃（こうげき）</p>
+        <p><strong>H ＋ 矢印：</strong> 必殺技（ひっさつわざ）！</p>
+    </div>
+
+    <!-- キャラ選択（せんたく）画面だよ -->
+    <div id="selection-screen" class="selection-screen">
+        <h2 id="selection-title" class="title">🖥️ どっちであそぶ？ 📱</h2>
+
+        <!-- 0. 端末選択（いちばんさいしょ） -->
+        <div id="device-section" class="device-settings">
+            <div class="device-list">
+                <button class="device-button" data-device="pc">
+                    <div class="device-icon">⌨️</div>
+                    <span>パソコン<br>(キーボード)</span>
+                </button>
+                <button class="device-button" data-device="mobile">
+                    <div class="device-icon">📱</div>
+                    <span>スマホ<br>(タッチ)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 1. ステージ選択（さいしょは隠しておく） -->
+        <div id="stage-section" class="stage-settings" style="display: none;">
+            <div class="stage-list">
+                <button class="stage-button active" data-stage="tour">
+                    <div class="stage-thumb">🌌</div>
+                    <span>ツアー</span>
+                </button>
+                <button class="stage-button" data-stage="sky">
+                    <div class="stage-thumb">☁️</div>
+                    <span>スカイ</span>
+                </button>
+                <button class="stage-button" data-stage="under">
+                    <div class="stage-thumb">🧱</div>
+                    <span>地下</span>
+                </button>
+                <button class="stage-button" data-stage="magma">
+                    <div class="stage-thumb">🌋</div>
+                    <span>マグマ</span>
+                </button>
+                <button class="stage-button" data-stage="dimension">
+                    <div class="stage-thumb">🌐</div>
+                    <span>次元</span>
+                </button>
+                <button class="stage-button" data-stage="meteor_flood">
+                    <div class="stage-thumb">☄️🌊</div>
+                    <span>水と隕石</span>
+                </button>
+            </div>
+            <button id="next-to-char" class="next-button">キャラクター選択へ ➔</button>
+        </div>
+
+        <!-- 2. キャラ選択（ステージを決めたあと表示） -->
+        <div id="char-section" class="char-section" style="display: none;">
+            <div class="character-list">
+                <button id="select-robot" class="char-button robot" data-type="robot">
+                    <div class="char-icon">🤖</div>
+                    <div class="char-name">ロボット</div>
+                </button>
+                <button id="select-hero" class="char-button hero" data-type="hero">
+                    <div class="char-icon">⚔️</div>
+                    <div class="char-name">ゆうしゃ</div>
+                </button>
+                <button id="select-kirby" class="char-button kirby" data-type="kirby">
+                    <div class="char-icon">🥯</div>
+                    <div class="char-name">カービィ</div>
+                </button>
+                <button id="select-pikachu" class="char-button pikachu" data-type="pikachu">
+                    <div class="char-icon">⚡</div>
+                    <div class="char-name">ピカチュウ</div>
+                </button>
+
+                <button id="select-mario" class="char-button mario" data-type="mario">
+                    <div class="char-icon">🍄</div>
+                    <div class="char-name">マリオ</div>
+                </button>
+                <button id="select-hinohi" class="char-button hinohi" data-type="hinohi">
+                    <div class="char-icon">☀️</div>
+                    <div class="char-name">ヒノヒ</div>
+                </button>
+                <button id="select-sans" class="char-button sans" data-type="sans">
+                    <div class="char-icon">💀</div>
+                    <div class="char-name">サンズ</div>
+                </button>
+
+                <button id="select-charizard" class="char-button charizard" data-type="charizard">
+                    <div class="char-icon">🔥</div>
+                    <div class="char-name">リザードン</div>
+                </button>
+                <button id="select-lucario" class="char-button lucario" data-type="lucario">
+                    <div class="char-icon">🌀</div>
+                    <div class="char-name">ルカリオ</div>
+                </button>
+
+                <button id="select-legend" class="char-button legend" data-type="legend">
+                    <div class="char-icon" style="background: linear-gradient(45deg, #f1c40f, #e74c3c, #9b59b6, #3498db);">🐉</div>
+                    <div class="char-name">究極のでんせつ</div>
+                </button>
+                <button id="select-pooh" class="char-button pooh" data-type="pooh">
+                    <div class="char-icon">🍯</div>
+                    <div class="char-name">プーさん</div>
+                </button>
+                <button id="select-duo" class="char-button duo" data-type="duo">
+                    <div class="char-icon">🤞🔥</div>
+                    <div class="char-name">最強コンビ</div>
+                </button>
+
+            </div>
+
+            <!-- 本家風のスロット表示を追加！ -->
+            <div class="player-slots">
+                <div class="slot p1">
+                    <div class="slot-label">P1</div>
+                    <div id="p1-name" class="slot-name">CHARACTER</div>
+                </div>
+                <div class="slot cpu">
+                    <div class="slot-label">CPU</div>
+                    <div id="cpu-name" class="slot-name">RANDOM</div>
+                </div>
+            </div>
+
+            <!-- CP（コンピューター）のつよさ設定！ -->
+            <div class="cpu-settings">
+                <h4>CPのつよさ</h4>
+                <div class="cpu-level-list">
+                    <button class="level-button active" data-level="1">1</button>
+                    <button class="level-button" data-level="2">2</button>
+                    <button class="level-button" data-level="3">3</button>
+                    <button class="level-button" data-level="4">4</button>
+                    <button class="level-button" data-level="5">5</button>
+                    <button class="level-button" data-level="6">6</button>
+                    <button class="level-button" data-level="7">7</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 「はじめますか？」のメッセージだよ -->
+        <div id="start-prompt" class="start-prompt" style="display: none;">
+            <h3>READY TO FIGHT?</h3>
+            <p>【SPACE】キーをおしてスタート！</p>
+        </div>
+    </div>
+
+    <!-- マウスについてくる「手」と「チップ」だよ -->
+    <div id="selection-hand" class="selection-hand">
+        <div class="hand-icon">👆</div>
+    </div>
+    <div id="selection-puck" class="selection-puck">P1</div>
+
+    <!-- Ready... GO! の演出パネルだよ -->
+    <div id="ready-go" class="ready-go" style="display: none;"></div>
+
+    <!-- ＭＰゲージ（ゆうしゃ専用） -->
+    <div id="mp-bar-container" class="mp-bar-container" style="display: none;">
+        <div class="mp-label">MP</div>
+        <div class="mp-bg">
+            <div id="mp-fill" class="mp-fill"></div>
+        </div>
+    </div>
+
+    <!-- 技（わざ）リストを端っこに表示するよ -->
+    <div id="move-list-container" class="move-list-container" style="display: none;">
+        <div id="move-list-content" class="move-list-content"></div>
+    </div>
+
+    <!-- 📱スマホ用タッチコントローラー📱 -->
+    <div id="touch-controls" class="touch-controls" style="display: none;">
+        <!-- 左側：移動用の十字ボタン -->
+        <div class="d-pad">
+            <button id="btn-up" class="pad-btn up">↑<br>ｼﾞｬﾝﾌﾟ</button>
+            <button id="btn-left" class="pad-btn left">←</button>
+            <button id="btn-right" class="pad-btn right">→</button>
+            <button id="btn-down" class="pad-btn down">↓</button>
+        </div>
+        <!-- 右側：攻撃などのアクションボタン -->
+        <div class="action-buttons">
+            <button id="btn-normal" class="act-btn normal">通常</button>
+            <button id="btn-smash" class="act-btn smash">ｽﾏｯｼｭ</button>
+            <button id="btn-special" class="act-btn special">必殺技</button>
+        </div>
+    </div>
+
+    <!-- ゲーム画面を表示するキャンバス（画用紙）だよ -->
+    <canvas id="gameCanvas" style="display: none;"></canvas>
+
+    <!-- ダメージ％を表示するボードだよ -->
+    <div id="damage-display" class="damage-display" style="display: none;">
+        <div class="player-damage">
+            <div class="char-label">PLAYER</div>
+            <div id="player-stocks" class="stocks">❤️❤️❤️</div>
+            <div id="player-percent" class="percent">0%</div>
+        </div>
+        <div class="cpu-damage">
+            <div class="char-label">CPU</div>
+            <div id="cpu-stocks" class="stocks">❤️❤️❤️</div>
+            <div id="cpu-percent" class="percent">0%</div>
+        </div>
+    </div>
+
+    <!-- ゲームのプログラムを読み込むよ -->
+    <script src="main.js"></script>
+
+    <!-- PWA（オフライン動作）のための裏方プログラムを登録するよ -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('PWAの準備が完了したよ！'))
+                    .catch((error) => console.log('PWAの準備にしっぱいしたみたい…', error));
+            });
+        }
+    </script>
+</body>
+
+</html>
