@@ -297,6 +297,11 @@ for (let id in touchButtons) {
             keys[touchButtons[id]] = false;
             btn.classList.remove('active');
         }, { passive: false });
+        btn.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            keys[touchButtons[id]] = false;
+            btn.classList.remove('active');
+        }, { passive: false });
     }
 }
 
@@ -313,6 +318,7 @@ if (btnNormal) {
         btnNormal.classList.add('active');
     }, { passive: false });
     btnNormal.addEventListener('touchend', (e) => { e.preventDefault(); btnNormal.classList.remove('active'); }, { passive: false });
+    btnNormal.addEventListener('touchcancel', (e) => { e.preventDefault(); btnNormal.classList.remove('active'); }, { passive: false });
 }
 
 const btnSmash = document.getElementById('btn-smash');
@@ -324,11 +330,19 @@ if (btnSmash) {
             else if (keys['ArrowDown']) player.attack('smash_down');
             else if (keys['ArrowLeft']) player.attack('smash_left');
             else if (keys['ArrowRight']) player.attack('smash_right');
-            else player.attack('smash_right'); // 向きがない時は右
+            else {
+                // 方向入力がない場合は、現在のプレイヤーの向きに合わせてスマッシュする
+                if (player.direction === -1) {
+                    player.attack('smash_left');
+                } else {
+                    player.attack('smash_right');
+                }
+            }
         }
         btnSmash.classList.add('active');
     }, { passive: false });
     btnSmash.addEventListener('touchend', (e) => { e.preventDefault(); btnSmash.classList.remove('active'); }, { passive: false });
+    btnSmash.addEventListener('touchcancel', (e) => { e.preventDefault(); btnSmash.classList.remove('active'); }, { passive: false });
 }
 
 const btnSpecial = document.getElementById('btn-special');
@@ -344,6 +358,7 @@ if (btnSpecial) {
         btnSpecial.classList.add('active');
     }, { passive: false });
     btnSpecial.addEventListener('touchend', (e) => { e.preventDefault(); btnSpecial.classList.remove('active'); }, { passive: false });
+    btnSpecial.addEventListener('touchcancel', (e) => { e.preventDefault(); btnSpecial.classList.remove('active'); }, { passive: false });
 }
 
 /**
@@ -1659,9 +1674,12 @@ class Character {
 
     draw() {
         ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.scale(this.scale, this.scale);
-        ctx.translate(-this.x, -this.y);
+        // キャラクターの重心（中心）を基準にして、向き（direction）に応じた左右反転と縮小を行う
+        const centerX = this.x + 12.5;
+        const centerY = this.y + 20;
+        ctx.translate(centerX, centerY);
+        ctx.scale(this.scale * this.direction, this.scale);
+        ctx.translate(-centerX, -centerY);
 
         if (this.type === 'robot') this.drawRobot();
         else if (this.type === 'hero') this.drawHero();

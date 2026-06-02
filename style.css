@@ -306,6 +306,67 @@ body {
         display: none !important;
     }
 
+    /* キャラ選択画面のレイアウト調整 */
+    .title {
+        font-size: 22px;
+        margin-bottom: 10px;
+    }
+
+    .character-list {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 8px;
+    }
+
+    .char-button {
+        width: 60px;
+        padding: 4px;
+        border-width: 2px;
+    }
+
+    .char-icon {
+        font-size: 20px;
+    }
+
+    .char-name {
+        font-size: 8px;
+    }
+
+    /* キャラ選択画面のスロット (P1 / CPU) をスマホサイズに調整 */
+    .player-slots {
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .slot {
+        width: 130px;
+        height: 50px;
+        padding: 0 10px;
+        border-width: 2.5px;
+    }
+
+    .slot-label {
+        font-size: 10px;
+        margin-bottom: 2px;
+    }
+
+    .slot-name {
+        font-size: 15px;
+    }
+
+    /* CPつよさ設定の調整 */
+    .cpu-settings {
+        margin-top: 10px;
+    }
+    .cpu-settings h4 {
+        margin-bottom: 4px;
+        font-size: 12px;
+    }
+    .level-button {
+        padding: 2px 8px;
+        font-size: 12px;
+    }
+
     /* 技の表示を小さくスタイリッシュにする */
     .move-list-container {
         top: 10px;
