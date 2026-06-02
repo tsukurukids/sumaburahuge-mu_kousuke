@@ -221,6 +221,12 @@ function updateMoveList(type) {
     } else if (type === 'legend') {
         moves = "究極のでんせつ：[H]光線 / [H+横]高速突進 / [H+上]大空上昇 / [H+下]時空崩壊";
     }
+    if (isMobile) {
+        moves = moves.replace(/\[H\+横\]/g, '横必殺')
+                     .replace(/\[H\+上\]/g, '上必殺')
+                     .replace(/\[H\+下\]/g, '下必殺')
+                     .replace(/\[H\]/g, '必殺');
+    }
     list.innerText = moves;
 }
 
