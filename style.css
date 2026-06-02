@@ -367,12 +367,12 @@ body {
         font-size: 12px;
     }
 
-    /* 技の表示を1/2サイズにして画面中心に配置する */
+    /* 技の表示を1/2サイズにして画面の上部中央に配置する */
     .move-list-container {
         position: fixed;
-        top: 50%;
+        top: 10px;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translateX(-50%);
         width: 250px; /* 500pxの1/2 */
         min-height: 50px; /* 100pxの1/2 */
         padding: 15px 20px; /* 30px 40pxの1/2 */
