@@ -293,3 +293,58 @@ body {
 .act-btn.smash:active, .act-btn.smash.active { background: rgba(52, 152, 219, 0.8); }
 .act-btn.special { background: rgba(241, 196, 15, 0.4); border-color: rgba(241, 196, 15, 0.8); }
 .act-btn.special:active, .act-btn.special.active { background: rgba(241, 196, 15, 0.8); }
+
+/* スマホ・タブレット向けのレスポンシブ対応 */
+@media (max-width: 768px) {
+    /* 操作方法を完全に非表示にする */
+    .controls {
+        display: none !important;
+    }
+
+    /* 技の表示を小さくスタイリッシュにする */
+    .move-list-container {
+        top: 10px;
+        right: 10px;
+        width: calc(100% - 40px);
+        max-width: 300px;
+        padding: 10px 15px;
+        font-size: 11px;
+        min-height: auto;
+        border-width: 2px;
+        line-height: 1.4;
+    }
+
+    /* 現在ストック数と％の表示を小さくする */
+    .damage-display {
+        bottom: 15px;
+        gap: 15px;
+    }
+
+    .player-damage, .cpu-damage {
+        padding: 5px 15px;
+        min-width: 100px;
+        border-radius: 10px;
+        border-bottom-width: 4px;
+    }
+
+    .percent {
+        font-size: 24px;
+    }
+
+    .stocks {
+        font-size: 12px;
+        margin-bottom: 2px;
+        letter-spacing: 2px;
+    }
+
+    .char-label {
+        font-size: 9px;
+    }
+
+    /* キャンバスをレスポンシブ対応にする */
+    #gameCanvas {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+}

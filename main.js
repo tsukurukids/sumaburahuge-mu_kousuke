@@ -135,8 +135,10 @@ function startGame(type) {
     hand.style.display = 'none';
     puck.style.display = 'none'; // 試合中はチップを消すよ！
 
-    // 【NEW!】試合が始まったら操作方法を表示するよ！
-    document.getElementById('controls').style.display = 'block';
+    // 【NEW!】試合が始まったら操作方法を表示するよ！（スマホモードの時は表示しない）
+    if (!isMobile) {
+        document.getElementById('controls').style.display = 'block';
+    }
 
     // 技（わざ）リストを表示するよ！
     updateMoveList(type);
