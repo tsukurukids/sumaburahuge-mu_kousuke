@@ -301,6 +301,11 @@ body {
         display: none !important;
     }
 
+    /* キャラ・ステージ選択時の「手」を非表示にする */
+    .selection-hand {
+        display: none !important;
+    }
+
     /* 技の表示を小さくスタイリッシュにする */
     .move-list-container {
         top: 10px;

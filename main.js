@@ -58,6 +58,9 @@ let isMobile = false; // モバイル（タッチ）モードかどうか
 document.querySelectorAll('.device-button').forEach(button => {
     button.addEventListener('click', () => {
         isMobile = (button.getAttribute('data-device') === 'mobile');
+        if (isMobile) {
+            hand.style.display = 'none';
+        }
         document.getElementById('device-section').style.display = 'none';
         document.getElementById('stage-section').style.display = 'block';
         document.getElementById('selection-title').innerText = '⚔️ ステージをえらぼう！';
