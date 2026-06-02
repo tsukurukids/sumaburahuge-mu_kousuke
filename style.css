@@ -380,10 +380,12 @@ body {
         line-height: 1.4;
     }
 
-    /* 現在ストック数と％の表示を小さくする */
+    /* 現在ストック数と％の表示を小さくして上に配置する */
     .damage-display {
-        bottom: 15px;
+        top: 10px;
+        bottom: auto;
         gap: 15px;
+        pointer-events: none; /* ボタンの邪魔をしないようにタッチ透過 */
     }
 
     .player-damage, .cpu-damage {

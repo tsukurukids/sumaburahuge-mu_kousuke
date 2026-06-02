@@ -350,15 +350,31 @@ if (btnSpecial) {
     btnSpecial.addEventListener('touchstart', (e) => {
         e.preventDefault();
         if (gameStarted) {
-            if (keys['ArrowUp']) player.special('up');
-            else if (keys['ArrowDown']) player.special('down');
-            else if (keys['ArrowLeft'] || keys['ArrowRight']) player.special('side');
-            else player.special('neutral');
+            if (player.type === 'hero') {
+                keys['KeyH'] = true;
+            } else {
+                if (keys['ArrowUp']) player.special('up');
+                else if (keys['ArrowDown']) player.special('down');
+                else if (keys['ArrowLeft'] || keys['ArrowRight']) player.special('side');
+                else player.special('neutral');
+            }
         }
         btnSpecial.classList.add('active');
     }, { passive: false });
-    btnSpecial.addEventListener('touchend', (e) => { e.preventDefault(); btnSpecial.classList.remove('active'); }, { passive: false });
-    btnSpecial.addEventListener('touchcancel', (e) => { e.preventDefault(); btnSpecial.classList.remove('active'); }, { passive: false });
+    btnSpecial.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (gameStarted && player.type === 'hero') {
+            keys['KeyH'] = false;
+        }
+        btnSpecial.classList.remove('active');
+    }, { passive: false });
+    btnSpecial.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        if (gameStarted && player.type === 'hero') {
+            keys['KeyH'] = false;
+        }
+        btnSpecial.classList.remove('active');
+    }, { passive: false });
 }
 
 /**
