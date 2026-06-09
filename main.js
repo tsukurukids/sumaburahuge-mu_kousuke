@@ -127,7 +127,7 @@ document.querySelectorAll('.stage-button').forEach(button => {
 
 function startGame(type) {
     // CPUのキャラをランダム（お任せ）で決めるよ！
-    const charList = ['robot', 'hero', 'kirby', 'pikachu', 'mario', 'hinohi', 'sans', 'charizard', 'lucario', 'duo', 'pooh'];
+    const charList = ['robot', 'hero', 'kirby', 'pikachu', 'mario', 'hinohi', 'sans', 'charizard', 'duo', 'pooh'];
     const cpuType = charList[Math.floor(Math.random() * charList.length)];
 
     // 状態をリセット（次の選択のため）
@@ -215,8 +215,6 @@ function updateMoveList(type) {
         moves = "サンズ：[H]ブラスター / [H+横]ボーン / [H+上]ワープ / [H+下]青い心";
     } else if (type === 'charizard') {
         moves = "リザードン：[H]火炎放射 / [H+横]フレアドライブ / [H+上]そらをとぶ / [H+下]いわくだき";
-    } else if (type === 'lucario') {
-        moves = "ルカリオ：[H]はどうだん / [H+横]はっけい / [H+上]しんそく / [H+下]かげぶんしん";
     } else if (type === 'duo') {
         moves = "最強コンビ：[H]茈・解 / [H+横]蒼・開 / [H+上]赤 / [H+下]領域展開";
     } else if (type === 'pooh') {
@@ -405,7 +403,10 @@ function setupActionJoystick(btnId, attackCallback) {
 
         if (gameStarted) {
             if (btnId === 'btn-special' && player.type === 'hero') {
-                keys['KeyH'] = false; // これで update() 内で技が発動する
+                keys['KeyH'] = false; 
+                player.isCharging = false;
+                player.triggerHeroSpecial(currentDir);
+                player.chargeTimer = 0;
             } else {
                 attackCallback(currentDir);
             }
@@ -1243,8 +1244,10 @@ class Character {
             if (this.hitbox && this.checkHit(this.hitbox, other)) {
                 if (this.type === 'mario' && this.attackType === 'special_side') {
                     // マントはダメージなしで相手の向きを反転させる
-                    other.direction *= -1;
+                    other.direction = -this.direction;
                     other.vx = this.direction * 5; // 少し押し出す
+                    other.hurtTimer = 30; // ひるませる！
+                    other.isAttacking = false;
                 } else {
                     let damage = this.getAttackDamage(this.attackType);
                     if (this.type === 'duo') {
@@ -1350,6 +1353,8 @@ class Character {
                 return;
             }
             if (this.copiedAbility === 'kirby_plasma' && type === 'neutral') {
+                this.isAttacking = true;
+                this.attackTimer = 20;
                 projectiles.push(new Projectile(this.x + (this.direction * 20), this.y + 10, this.direction * 10, 0, '#00d2ff', 'kirby_plasma', this));
                 return;
             }
@@ -1409,13 +1414,13 @@ class Character {
             this.isAttacking = true;
             this.attackType = 'special_' + type;
             if (type === 'neutral') {
-                projectiles.push(new Projectile(this.x + (this.direction * 20), this.y + 15, this.direction * 8, -4, '#ff4500', 'mario_fireball', this));
+                projectiles.push(new Projectile(this.x + (this.direction * 20), this.y + 15, this.direction * 8, 2, '#ff4500', 'mario_fireball', this));
             } else if (type === 'side') {
                 this.attackTimer = 30; // マント
                 this.hitbox = { x: this.x + (this.direction * 20), y: this.y, w: 30, h: 40 };
             } else if (type === 'up') {
                 this.attackTimer = 30; this.vy = -15; // スーパージャンプパンチ
-                this.hitbox = { x: this.x - 5, y: this.y - 20, w: 35, h: 40 };
+                this.hitbox = { x: this.x - 10, y: this.y - 10, w: 45, h: 50 };
             } else if (type === 'down') {
                 this.attackTimer = 30; this.vy = 20; // ヒップドロップ
                 this.hitbox = { x: this.x - 5, y: this.y + this.height, w: 35, h: 20 };
@@ -1522,32 +1527,13 @@ class Character {
                 this.attackTimer = 45;
                 this.vx = this.direction * 18;
                 this.hitbox = { x: this.x - 30, y: this.y - 10, w: 90, h: 60 };
-                this.takeDamage(this, 5);
+                this.percent += 5; // 怯まない自己ダメージ
             } else if (type === 'up') {
                 this.attackTimer = 40; this.vy = -20;
                 this.hitbox = { x: this.x - 10, y: this.y - 10, w: 50, h: 40 };
             } else if (type === 'down') {
                 this.attackTimer = 30;
                 this.hitbox = { x: this.x - 20, y: this.y + 10, w: 70, h: 45 };
-            }
-        }
-        // 【ルカリオの必殺技】
-        else if (this.type === 'lucario') {
-            this.isAttacking = true;
-            this.attackType = 'special_' + type;
-            if (type === 'neutral') {
-                this.attackTimer = 35;
-                // 波導弾！
-                projectiles.push(new Projectile(this.x + (this.direction * 30), this.y + 15, this.direction * 9, 0, '#3498db', 'aura', this));
-                projectiles.push(new Projectile(this.x + (this.direction * 30), this.y + 15, this.direction * 12, 0, '#3498db', 'aura', this));
-            } else if (type === 'side') {
-                this.attackTimer = 25;
-                this.hitbox = { x: this.x + (this.direction * 20), y: this.y + 5, w: 50, h: 40 }; // はっけい
-            } else if (type === 'up') {
-                this.attackTimer = 50;
-                this.vx = this.direction * 15; this.vy = -12; // しんそく
-            } else if (type === 'down') {
-                this.attackType = 'special_down'; this.attackTimer = 40; // カウンター待機
             }
         }
         // 【ゼラオラの必殺技】
@@ -1605,7 +1591,7 @@ class Character {
                 this.attackTimer = 25;
                 projectiles.push(new Projectile(this.x + (this.direction === 1 ? this.width : 0), this.y + 20, this.direction * 9, -4, '#00d2ff', 'robot_plasma', this));
             } else if (type === 'side') {
-                this.attackTimer = 25; this.vx = this.direction * 3;
+                this.attackTimer = 25; this.vx = this.direction * 12;
                 this.hitbox = { x: this.x + (this.direction === 1 ? this.width : -25), y: this.y + 10, w: 25, h: 40 };
             } else if (type === 'up') {
                 this.attackTimer = 45; this.vy = -18; this.canSpecialUp = false;
@@ -1810,7 +1796,6 @@ class Character {
         else if (this.type === 'steve') this.drawSteve();
         else if (this.type === 'mewtwo') this.drawMewtwo();
         else if (this.type === 'charizard') this.drawCharizard();
-        else if (this.type === 'lucario') this.drawLucario();
         else if (this.type === 'zeraora') this.drawZeraora();
         else if (this.type === 'deku') this.drawDeku();
         else if (this.type === 'pooh') this.drawPooh();
@@ -2523,6 +2508,11 @@ class Character {
         ctx.fillStyle = '#00d2ff'; ctx.fillRect(this.x + 8, this.y + 4, 9, 3);
         ctx.fillStyle = '#7f8c8d'; ctx.fillRect(this.x + 2, this.y + 12, 21, 18);
         ctx.fillStyle = '#34495e'; ctx.fillRect(this.x + 5, this.y + 30 + walk, 6, 10); ctx.fillRect(this.x + 14, this.y + 30 - walk, 6, 10);
+        
+        if (this.attackType === 'special_down' && this.isAttacking) {
+            ctx.fillStyle = 'rgba(231, 76, 60, 0.6)';
+            ctx.fillRect(this.x - 15, this.y - 10, 70, 80); // バーナーのエフェクト
+        }
     }
 
     drawDuo() {
