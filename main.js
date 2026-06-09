@@ -188,6 +188,7 @@ function startGame(type) {
             }
             document.getElementById('gameCanvas').style.display = 'block';
             document.getElementById('move-list-container').style.display = 'block'; // 技リストを表示
+            document.getElementById('end-match-btn').style.display = 'block'; // 終了ボタンを表示
             if (isMobile) {
                 document.getElementById('touch-controls').style.display = 'flex';
             }
@@ -246,6 +247,13 @@ for (let i = 0; i < 80; i++) {
         size: Math.random() * 2
     });
 }
+
+// 試合終了ボタンの処理
+document.getElementById('end-match-btn').addEventListener('click', () => {
+    if (gameStarted) {
+        location.reload(); // ページをリロードしてキャラ選択画面に戻る
+    }
+});
 
 // ----------------------------------------------------
 // 【NEW!】世界（せかい）を旅する仕組み

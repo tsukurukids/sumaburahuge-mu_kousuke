@@ -214,6 +214,25 @@ body {
     text-align: center;
 }
 
+/* 試合終了ボタン */
+.end-match-btn {
+    position: fixed;
+    top: 140px; /* PC: 技表の下あたり */
+    right: 20px;
+    background: #e74c3c;
+    color: white;
+    border: 3px solid #c0392b;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: transform 0.1s;
+}
+.end-match-btn:active { transform: scale(0.95); }
+
 /* 端末選択ボタン */
 .device-settings { margin-top: 20px; text-align: center; }
 .device-list { display: flex; gap: 30px; justify-content: center; }
@@ -385,6 +404,16 @@ body {
         justify-content: center;
         text-align: center;
         pointer-events: none; /* 操作の邪魔をしないように透過 */
+    }
+
+    /* スマホ版試合終了ボタン */
+    .end-match-btn {
+        top: 65px; /* 技表とダメージ（ストック）の間 */
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 5px 15px;
+        font-size: 12px;
     }
 
     /* 自分の％とストックを左上に、相手のを右上に配置 */
