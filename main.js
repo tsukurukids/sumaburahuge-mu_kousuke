@@ -313,77 +313,131 @@ for (let id in touchButtons) {
     }
 }
 
-// アクションボタン
-const btnNormal = document.getElementById('btn-normal');
-if (btnNormal) {
-    btnNormal.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (!gameStarted && isPuckPlaced) {
-            startGame(selectedChar);
-        } else if (gameStarted) {
-            player.attack('normal');
-        }
-        btnNormal.classList.add('active');
-    }, { passive: false });
-    btnNormal.addEventListener('touchend', (e) => { e.preventDefault(); btnNormal.classList.remove('active'); }, { passive: false });
-    btnNormal.addEventListener('touchcancel', (e) => { e.preventDefault(); btnNormal.classList.remove('active'); }, { passive: false });
-}
+// 📱 スマホ用アクションボタンのジョイスティック化 📱
+function setupActionJoystick(btnId, attackCallback) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
 
-const btnSmash = document.getElementById('btn-smash');
-if (btnSmash) {
-    btnSmash.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (gameStarted) {
-            if (keys['ArrowUp']) player.attack('smash_up');
-            else if (keys['ArrowDown']) player.attack('smash_down');
-            else if (keys['ArrowLeft']) player.attack('smash_left');
-            else if (keys['ArrowRight']) player.attack('smash_right');
-            else {
-                // 方向入力がない場合は、現在のプレイヤーの向きに合わせてスマッシュする
-                if (player.direction === -1) {
-                    player.attack('smash_left');
-                } else {
-                    player.attack('smash_right');
-                }
-            }
-        }
-        btnSmash.classList.add('active');
-    }, { passive: false });
-    btnSmash.addEventListener('touchend', (e) => { e.preventDefault(); btnSmash.classList.remove('active'); }, { passive: false });
-    btnSmash.addEventListener('touchcancel', (e) => { e.preventDefault(); btnSmash.classList.remove('active'); }, { passive: false });
-}
+    // 指の動きに合わせる「ノブ（内側の丸）」を作るよ
+    const knob = document.createElement('div');
+    knob.style.position = 'absolute';
+    knob.style.width = '30px';
+    knob.style.height = '30px';
+    knob.style.background = 'rgba(255, 255, 255, 0.8)';
+    knob.style.borderRadius = '50%';
+    knob.style.top = '50%';
+    knob.style.left = '50%';
+    knob.style.transform = 'translate(-50%, -50%)';
+    knob.style.pointerEvents = 'none';
+    knob.style.display = 'none';
+    btn.style.position = 'relative';
+    btn.appendChild(knob);
 
-const btnSpecial = document.getElementById('btn-special');
-if (btnSpecial) {
-    btnSpecial.addEventListener('touchstart', (e) => {
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+    let currentDir = null; // 'up', 'down', 'left', 'right', ニュートラルは null
+
+    btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        if (gameStarted) {
-            if (player.type === 'hero') {
-                keys['KeyH'] = true;
+        const touch = e.changedTouches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        isDragging = true;
+        btn.classList.add('active');
+        knob.style.display = 'block';
+        knob.style.transform = 'translate(-50%, -50%)';
+        currentDir = null;
+
+        // ゆうしゃの「ため」開始処理
+        if (btnId === 'btn-special' && gameStarted && player.type === 'hero') {
+            keys['KeyH'] = true;
+        }
+    }, { passive: false });
+
+    btn.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!isDragging) return;
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        const dist = Math.hypot(dx, dy);
+
+        // ノブを動かす（最大30pxまで）
+        const maxDist = 30;
+        const uiDist = Math.min(dist, maxDist);
+        const angle = Math.atan2(dy, dx);
+        const knobX = Math.cos(angle) * uiDist;
+        const knobY = Math.sin(angle) * uiDist;
+        knob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+
+        // 20px以上動かしたら方向決定！
+        if (dist > 20) {
+            if (Math.abs(dx) > Math.abs(dy)) {
+                currentDir = dx > 0 ? 'right' : 'left';
             } else {
-                if (keys['ArrowUp']) player.special('up');
-                else if (keys['ArrowDown']) player.special('down');
-                else if (keys['ArrowLeft'] || keys['ArrowRight']) player.special('side');
-                else player.special('neutral');
+                currentDir = dy > 0 ? 'down' : 'up';
             }
+        } else {
+            currentDir = null;
         }
-        btnSpecial.classList.add('active');
+
+        // ゆうしゃ用に一時的に方向を保存
+        if (btnId === 'btn-special' && gameStarted && player.type === 'hero') {
+            player.touchForceDir = currentDir;
+        }
     }, { passive: false });
-    btnSpecial.addEventListener('touchend', (e) => {
+
+    const handleEnd = (e) => {
         e.preventDefault();
-        if (gameStarted && player.type === 'hero') {
-            keys['KeyH'] = false;
+        if (!isDragging) return;
+        isDragging = false;
+        btn.classList.remove('active');
+        knob.style.display = 'none';
+
+        if (gameStarted) {
+            if (btnId === 'btn-special' && player.type === 'hero') {
+                keys['KeyH'] = false; // これで update() 内で技が発動する
+            } else {
+                attackCallback(currentDir);
+            }
+        } else if (!gameStarted && isPuckPlaced && btnId === 'btn-normal') {
+            startGame(selectedChar);
         }
-        btnSpecial.classList.remove('active');
-    }, { passive: false });
-    btnSpecial.addEventListener('touchcancel', (e) => {
-        e.preventDefault();
-        if (gameStarted && player.type === 'hero') {
-            keys['KeyH'] = false;
-        }
-        btnSpecial.classList.remove('active');
-    }, { passive: false });
+        currentDir = null;
+        if (player) player.touchForceDir = null;
+    };
+
+    btn.addEventListener('touchend', handleEnd, { passive: false });
+    btn.addEventListener('touchcancel', handleEnd, { passive: false });
 }
+
+// 各ボタンにジョイスティック機能をセット！
+setupActionJoystick('btn-normal', (dir) => {
+    player.attack('normal');
+});
+
+setupActionJoystick('btn-smash', (dir) => {
+    if (dir === 'up') player.attack('smash_up');
+    else if (dir === 'down') player.attack('smash_down');
+    else if (dir === 'left') player.attack('smash_left');
+    else if (dir === 'right') player.attack('smash_right');
+    else {
+        // ニュートラルなら向いている方向にスマッシュ！
+        if (player.direction === -1) player.attack('smash_left');
+        else player.attack('smash_right');
+    }
+});
+
+setupActionJoystick('btn-special', (dir) => {
+    if (dir === 'up') player.special('up');
+    else if (dir === 'down') player.special('down');
+    else if (dir === 'left' || dir === 'right') {
+        player.direction = (dir === 'right') ? 1 : -1; // 振り向く
+        player.special('side');
+    }
+    else player.special('neutral');
+});
 
 /**
  * 飛び道具（プラズマ・ショット）のクラス
@@ -1646,7 +1700,7 @@ class Character {
     }
 
     triggerHeroSpecial(forceType = null) {
-        let type = forceType;
+        let type = forceType || this.touchForceDir; // 【NEW!】タッチ操作の方向を優先
         if (!type) { // Hを離したときに決まる方向
             if (keys['ArrowUp']) type = 'up';
             else if (keys['ArrowDown']) type = 'down';
@@ -1656,6 +1710,9 @@ class Character {
                 if (keys['ArrowRight']) this.direction = 1;
             }
             else type = 'neutral';
+        } else if (type === 'left' || type === 'right') { // タッチジョイスティックから来た場合
+            this.direction = (type === 'right') ? 1 : -1;
+            type = 'side';
         }
 
         this.attackIsCharged = this.chargeTimer > 48; // 0.8秒以上でため攻撃！
