@@ -453,6 +453,41 @@ body {
         font-size: 7px;
     }
 
+    /* スマホ版タッチコントローラーの配置調整（技ボタンを縦一列に、移動ボタンを小さく） */
+    .touch-controls {
+        bottom: 15px;
+        padding: 0 15px;
+        align-items: flex-end;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .act-btn {
+        width: 65px;
+        height: 65px;
+        font-size: 12px;
+    }
+
+    .d-pad {
+        width: 150px;
+        height: 150px;
+        margin-bottom: 5px;
+    }
+
+    .pad-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+    }
+    
+    .pad-btn.up { top: 0; left: 50px; font-size: 10px !important; }
+    .pad-btn.down { bottom: 0; left: 50px; }
+    .pad-btn.left { top: 50px; left: 0; }
+    .pad-btn.right { top: 50px; right: 0; }
+
     /* キャンバスをレスポンシブ対応にする */
     #gameCanvas {
         max-width: 100%;
