@@ -1179,18 +1179,34 @@ class Character {
             // 攻撃の当たり判定（相手へのヒット）
             const other = (this === player) ? cpu : player;
             if (this.hitbox && this.checkHit(this.hitbox, other)) {
-                let damage = this.getAttackDamage(this.attackType);
-                if (this.type === 'duo') {
-                    damage *= 1.2; // 最強コンビ倍率（1.5から1.2に調整）
-                    if (this.attackType === 'normal') {
-                        damage *= 1.4; // 黒閃はさらに1.4倍（2から1.4に調整）
-                        // 画面フラッシュ演出
-                        ctx.fillStyle = 'rgba(0,0,0,0.8)';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (this.type === 'mario' && this.attackType === 'special_side') {
+                    // マントはダメージなしで相手の向きを反転させる
+                    other.direction *= -1;
+                    other.vx = this.direction * 5; // 少し押し出す
+                } else {
+                    let damage = this.getAttackDamage(this.attackType);
+                    if (this.type === 'duo') {
+                        damage *= 1.2; // 最強コンビ倍率（1.5から1.2に調整）
+                        if (this.attackType === 'normal') {
+                            damage *= 1.4; // 黒閃はさらに1.4倍（2から1.4に調整）
+                            // 画面フラッシュ演出
+                            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
                     }
+                    other.takeDamage(this, damage);
                 }
-                other.takeDamage(this, damage);
                 this.hitbox = null; // 一回当たったら消すよ
+            }
+
+            // 【NEW!】マントによる飛び道具の反射
+            if (this.type === 'mario' && this.attackType === 'special_side' && this.hitbox) {
+                projectiles.forEach(p => {
+                    if (p.owner !== this && this.checkHit(this.hitbox, { x: p.x - p.radius, y: p.y - p.radius, w: p.radius * 2, h: p.radius * 2 })) {
+                        p.vx *= -1.5;
+                        p.owner = this; // 自分の飛び道具になる
+                    }
+                });
             }
 
             // 【カービィのすいこみ判定】
@@ -1703,6 +1719,20 @@ class Character {
         const centerY = this.y + 20;
         ctx.translate(centerX, centerY);
         ctx.scale(this.scale * this.direction, this.scale);
+
+        // --- 全キャラ共通のアタックモーション（ポーズの変化） ---
+        if (this.isAttacking) {
+            if (this.attackType.startsWith('smash') || this.attackType === 'normal') {
+                ctx.rotate(0.2); // 前のめりになる
+            } else if (this.attackType === 'special_up') {
+                ctx.rotate(-0.2); // 上を向く
+            } else if (this.attackType === 'special_down') {
+                ctx.scale(1.1, 0.9); // しゃがむ（潰れる）
+            } else if (this.attackType === 'special_side') {
+                ctx.rotate(0.1); // 少し前へ
+            }
+        }
+
         ctx.translate(-centerX, -centerY);
 
         if (this.type === 'robot') this.drawRobot();
@@ -1740,6 +1770,23 @@ class Character {
 
     drawMario() {
         const walk = (Math.abs(this.vx) > 0.1) ? Math.sin(animationFrame * 0.2) * 4 : 0;
+
+        // --- マリオの攻撃エフェクト ---
+        if (this.isAttacking) {
+            if (this.attackType === 'special_side') {
+                // マントを描画
+                ctx.fillStyle = '#f1c40f'; // 黄色いマント
+                ctx.beginPath();
+                ctx.moveTo(this.x + 15, this.y + 15);
+                ctx.quadraticCurveTo(this.x + 35, this.y + 5, this.x + 40 + Math.sin(animationFrame) * 10, this.y + 25);
+                ctx.quadraticCurveTo(this.x + 20, this.y + 40, this.x + 5, this.y + 30);
+                ctx.fill();
+            } else if (this.attackType.startsWith('smash') || this.attackType === 'normal') {
+                // パンチの軌跡
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.beginPath(); ctx.arc(this.x + 35, this.y + 25, 10 + Math.random()*5, 0, Math.PI * 2); ctx.fill();
+            }
+        }
 
         // --- 帽子 (赤いM帽) ---
         ctx.fillStyle = '#c0392b';
@@ -2030,6 +2077,26 @@ class Character {
         // リザードン：炎を纏う最強のドラゴン
         const wingMove = Math.sin(animationFrame * 0.15) * 10;
         const walk = (Math.abs(this.vx) > 0.1) ? Math.sin(animationFrame * 0.2) * 4 : 0;
+
+        // --- リザードンの攻撃エフェクト ---
+        if (this.isAttacking) {
+            if (this.attackType === 'special_side') {
+                // フレアドライブ
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.fillStyle = '#3498db';
+                ctx.beginPath(); ctx.arc(this.x + 15, this.y + 20, 45 + Math.random() * 10, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath(); ctx.arc(this.x + 15, this.y + 20, 30 + Math.random() * 10, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            } else if (this.attackType.startsWith('smash') || this.attackType === 'normal') {
+                // 引っ掻きエフェクト
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(this.x + 25, this.y + 5); ctx.lineTo(this.x + 50, this.y + 30); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(this.x + 20, this.y + 15); ctx.lineTo(this.x + 45, this.y + 40); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(this.x + 15, this.y + 25); ctx.lineTo(this.x + 40, this.y + 50); ctx.stroke();
+            }
+        }
 
         // --- 翼 (コウモリ型・紺色) ---
         ctx.fillStyle = '#1a237e';
