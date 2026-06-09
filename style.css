@@ -152,8 +152,9 @@ body {
 .selection-hand { position: fixed; pointer-events: none; z-index: 1000; }
 .hand-icon { font-size: 55px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); }
 .selection-puck {
+    display: none !important; /* P1の円を消す */
     position: fixed; width: 38px; height: 38px; background: #e74c3c;
-    color: white; border-radius: 50%; display: flex; align-items: center;
+    color: white; border-radius: 50%; align-items: center;
     justify-content: center; font-weight: 900; border: 3px solid #fff;
     box-shadow: 0 5px 10px rgba(0,0,0,0.5); z-index: 1001;
 }

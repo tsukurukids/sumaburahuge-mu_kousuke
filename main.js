@@ -60,10 +60,8 @@ document.querySelectorAll('.device-button').forEach(button => {
         isMobile = (button.getAttribute('data-device') === 'mobile');
         if (isMobile) {
             hand.style.display = 'none';
-            puck.style.display = 'none';
         } else {
             hand.style.display = 'block';
-            puck.style.display = 'flex';
         }
         document.getElementById('device-section').style.display = 'none';
         document.getElementById('stage-section').style.display = 'block';
