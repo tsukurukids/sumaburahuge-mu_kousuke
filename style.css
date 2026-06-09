@@ -294,8 +294,8 @@ body {
 .act-btn.special { background: rgba(241, 196, 15, 0.4); border-color: rgba(241, 196, 15, 0.8); }
 .act-btn.special:active, .act-btn.special.active { background: rgba(241, 196, 15, 0.8); }
 
-/* スマホ・タブレット向けのレスポンシブ対応 */
-@media (max-width: 768px) {
+/* スマホ・タブレット向けのレスポンシブ対応（横向きのスマホも対応するよ！） */
+@media (max-width: 1024px), (max-height: 500px) {
     /* 操作方法を完全に非表示にする */
     .controls {
         display: none !important;
