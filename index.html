@@ -1252,7 +1252,8 @@ class Projectile {
         if (type === 'honey') return 8;
         if (type === 'slime_split') return 8;
         if (type === 'slime_puddle') return 2;
-        if (type === 'magnet_bullet') return 10;
+        if (type === 'magnet_bullet') return 3;
+        if (type === 'magnet_explosion') return 6;
         if (type === 'magnet_field') return 2;
         if (type.startsWith('dealer_card_')) {
             if (type === 'dealer_card_spade') return 15;
@@ -1526,7 +1527,27 @@ class Projectile {
             }
         }
         else if (this.type === 'magnet_bullet') {
+            // 相手（撃った本人以外のキャラクター）をターゲットに追尾する
+            const target = (this.owner === player) ? cpu : player;
+            
+            const targetX = target.x + target.width / 2;
+            const targetY = target.y + target.height / 2;
+            const dx = targetX - this.x;
+            const dy = targetY - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist > 5) {
+                const speed = 16; // スピードアップ
+                const steerRate = 0.12; // 追尾性能調整
+                const targetVx = (dx / dist) * speed;
+                const targetVy = (dy / dist) * speed;
+                this.vx += (targetVx - this.vx) * steerRate;
+                this.vy += (targetVy - this.vy) * steerRate;
+            }
+            
             this.x += this.vx;
+            this.y += this.vy;
+            
             if (animationFrame % 2 === 0) {
                 const pColor = (this.color.includes('200')) ? 'hsl(200, 90%, 60%)' : 'hsl(0, 90%, 60%)';
                 particles.push(new Particle(this.x, this.y, (Math.random()-0.5)*2, (Math.random()-0.5)*2, pColor, 2, 8, 'electric'));
@@ -1812,7 +1833,7 @@ class Projectile {
         else if (this.type === 'block') {
             ctx.fillStyle = '#795548'; ctx.fillRect(this.x - 15, this.y - 15, 30, 30);
         }
-        else if (this.type === 'explosion') {
+        else if (this.type === 'explosion' || this.type === 'magnet_explosion') {
             ctx.fillStyle = '#e67e22'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
         }
         else if (this.type === 'charizard_flame') {
@@ -2023,6 +2044,8 @@ class Character {
         this.speedTimer = 0;
         this.redModeTimer = 0;
         this.timeHistory = [];
+        this.attachedMagnet = null; // 'red' or 'blue'
+        this.attachedMagnetTimer = 0;
 
         this.history = [];
         for (let i = 0; i < 15; i++) this.history.push({ x: this.x, y: this.y });
@@ -2071,6 +2094,55 @@ class Character {
     }
 
     update(target = null) {
+        if (this.stunTimer > 0) {
+            this.stunTimer--;
+            this.vx = 0;
+            this.vy = 0;
+            if (animationFrame % 6 === 0) {
+                particles.push(new Particle(this.x + Math.random() * this.width, this.y + Math.random() * this.height, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5, '#00e5ff', 3, 10, 'space'));
+            }
+            if (this.attachedMagnetTimer > 0) {
+                this.attachedMagnetTimer--;
+                if (this.attachedMagnetTimer === 0) this.attachedMagnet = null;
+            }
+            if (this.speedTimer > 0) this.speedTimer--;
+            if (this.redModeTimer > 0) {
+                this.redModeTimer--;
+                if (this.redModeTimer === 0) this.isRedMode = false;
+            }
+            return;
+        }
+
+        if (this.attachedMagnetTimer > 0) {
+            this.attachedMagnetTimer--;
+            if (this.attachedMagnetTimer === 0) this.attachedMagnet = null;
+        }
+
+        // 磁石の引力・斥力物理演算
+        if (target && this.attachedMagnet && target.attachedMagnet) {
+            const dx = target.x - this.x;
+            const dy = target.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 15 && dist < 650) {
+                const samePolarity = (this.attachedMagnet === target.attachedMagnet);
+                // 距離が近いほど強く、遠いと弱い力
+                const forceMagnitude = 65 / (dist + 40); 
+                if (samePolarity) {
+                    // 反発（離れる方向）
+                    this.vx -= (dx / dist) * forceMagnitude;
+                    this.vy -= (dy / dist) * forceMagnitude;
+                } else {
+                    // 引き寄せ（くっつく方向）
+                    this.vx += (dx / dist) * forceMagnitude;
+                    this.vy += (dy / dist) * forceMagnitude;
+                }
+                if (animationFrame % 10 === 0) {
+                    const color = this.attachedMagnet === 'red' ? 'hsl(0, 90%, 60%)' : 'hsl(200, 90%, 60%)';
+                    particles.push(new Particle(this.x + this.width / 2, this.y + this.height / 2, (Math.random()-0.5)*2, (Math.random()-0.5)*2, color, 2, 8, 'electric'));
+                }
+            }
+        }
+
         if (this.speedTimer > 0) {
             this.speedTimer--;
             if (this.speedTimer === 0) this.speed = 6 * this.scale;
@@ -2331,6 +2403,12 @@ class Character {
                     }
                     else if (p.type === 'timetraveler_stop') {
                         this.stunTimer = 90;
+                    }
+                    else if (p.type === 'magnet_bullet') {
+                        const expl = new Projectile(p.x, p.y, 0, 0, '#e67e22', 'magnet_explosion', p.owner);
+                        expl.radius = 45;
+                        expl.life = 10;
+                        projectiles.push(expl);
                     }
 
                     if (p.type !== 'explosion' && p.type !== 'duo_aka' && p.type !== 'legend_aka') p.life = 0;
@@ -2746,7 +2824,7 @@ class Character {
             this.isAttacking = true;
             this.attackType = 'special_' + type;
             if (type === 'neutral') {
-                this.attackTimer = 25;
+                this.attackTimer = 12;
                 if (!this.magnetColorState) this.magnetColorState = 'blue';
                 this.magnetColorState = (this.magnetColorState === 'blue') ? 'red' : 'blue';
                 const pColor = (this.magnetColorState === 'blue') ? 'hsl(200, 90%, 55%)' : 'hsl(0, 90%, 55%)';
@@ -2768,6 +2846,14 @@ class Character {
                 }
             } else if (type === 'down') {
                 this.attackTimer = 40;
+                
+                // 自分に赤、相手にランダムな磁石を付与
+                this.attachedMagnet = 'red';
+                this.attachedMagnetTimer = 360;
+                const other = (this === player) ? cpu : player;
+                other.attachedMagnet = (Math.random() < 0.5) ? 'red' : 'blue';
+                other.attachedMagnetTimer = 360;
+                
                 const field = new Projectile(this.x + 12.5, this.y + 20, 0, 0, 'rgba(0, 150, 255, 0.4)', 'magnet_field', this);
                 field.radius = 10;
                 field.life = 60;
@@ -2995,6 +3081,29 @@ class Character {
         ctx.lineTo(this.x + (17.5 * this.scale), this.y - 10);
         ctx.lineTo(this.x + (12.5 * this.scale), this.y - 4);
         ctx.fill();
+        
+        // 磁石付着マークの描画
+        if (this.attachedMagnet) {
+            ctx.save();
+            const badgeColor = this.attachedMagnet === 'red' ? 'hsl(0, 90%, 55%)' : 'hsl(200, 90%, 55%)';
+            const badgeText = this.attachedMagnet === 'red' ? 'S' : 'N';
+            const bx = this.x + (12.5 * this.scale);
+            const by = this.y - 35;
+            ctx.fillStyle = badgeColor;
+            ctx.beginPath();
+            ctx.arc(bx, by, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(badgeText, bx, by);
+            ctx.restore();
+        }
+        
         ctx.textAlign = 'left';
     }
 
@@ -4152,8 +4261,9 @@ class Character {
         }
 
         const knockbackMult = (attacker.isKokusen ? 2.5 : 1) * (1 + (this.damagePercent / 50));
-        const knockbackX = (this.x > attacker.x ? 1 : -1) * 8 * knockbackMult * this.scale;
-        const knockbackY = -6 * knockbackMult * this.scale;
+        const kbFactor = (attacker.type === 'magnet_bullet' || attacker.type === 'magnet_explosion') ? 1/3 : 1;
+        const knockbackX = (this.x > attacker.x ? 1 : -1) * 8 * knockbackMult * this.scale * kbFactor;
+        const knockbackY = -6 * knockbackMult * this.scale * kbFactor;
 
         this.vx = knockbackX;
         this.vy = knockbackY;
