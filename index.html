@@ -529,10 +529,6 @@ body {
                         <div class="stage-thumb">☁️</div>
                         <span>スカイ</span>
                     </button>
-                    <button class="stage-button" data-stage="magma">
-                        <div class="stage-thumb">🌋</div>
-                        <span>マグマ</span>
-                    </button>
                     <button class="stage-button" data-stage="dimension">
                         <div class="stage-thumb">🌐</div>
                         <span>次元</span>
@@ -705,10 +701,6 @@ let selectedStage = 'tour'; // 選ばれたステージ（デフォルトはツ�
 
 // ステージのプラットフォーム（戦場風ステージ用）
 let platforms = [];
-
-// マグマの高さ（マグマステージ用）
-let magmaY = 550;
-let stageOffset = 0; // マグマステージの足場揺れ用
 
 let selectedChar = null;
 let isPuckPlaced = false;
@@ -1318,7 +1310,7 @@ class Projectile {
             this.vy += 0.3; // 重力を追加
             this.x += this.vx;
             this.y += this.vy;
-            const stageY = 400 + (selectedStage === 'magma' ? Math.sin(animationFrame * 0.05) * 30 : 0);
+            const stageY = 400;
             const stageX = (selectedStage === 'under') ? 50 : 250;
             const stageW = (selectedStage === 'under') ? 900 : 500;
             if (this.y + this.radius > stageY && this.y < stageY + 50 &&
@@ -1467,7 +1459,7 @@ class Projectile {
             this.vy += this.gravity;
             this.x += this.vx;
             this.y += this.vy;
-            const stageY = 400 + (selectedStage === 'magma' ? Math.sin(animationFrame * 0.05) * 30 : 0);
+            const stageY = 400;
             const stageX = (selectedStage === 'under') ? 50 : 250;
             const stageW = (selectedStage === 'under') ? 900 : 500;
             if (this.y + this.radius > stageY && this.y < stageY + 50 &&
@@ -1968,7 +1960,7 @@ class Character {
             this.vx = 0; this.vy = 0;
         }
 
-        const stageY = 400 + (selectedStage === 'magma' ? Math.sin(animationFrame * 0.05) * 30 : 0);
+        const stageY = 400;
         const stageX = (selectedStage === 'under') ? 50 : 250;
         const stageW = (selectedStage === 'under') ? 900 : 500;
 
@@ -1999,10 +1991,7 @@ class Character {
             });
         }
 
-        if (selectedStage === 'magma' && this.y > 520) {
-            this.takeDamage({ x: this.x, y: 600 }, 15);
-            this.vy = -18;
-        }
+
 
         if (selectedStage === 'under') {
             if (this.x < 50) { this.x = 50; this.vx = Math.abs(this.vx) * 0.8; }
@@ -2517,7 +2506,7 @@ class Character {
                 }
             } else if (type === 'down') {
                 this.attackTimer = 30;
-                const stageY = 400 + (selectedStage === 'magma' ? Math.sin(animationFrame * 0.05) * 30 : 0);
+                const stageY = 400;
                 const puddle = new Projectile(this.x + 12.5, stageY - 10, 0, 0, 'hsl(120, 75%, 35%)', 'slime_puddle', this);
                 puddle.radius = 35;
                 puddle.life = 180;
@@ -3831,14 +3820,6 @@ function gameLoop() {
         ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = "#444"; ctx.lineWidth = 2;
         for (let i = 0; i < 10; i++) { ctx.beginPath(); ctx.moveTo(i * 100, 0); ctx.lineTo(i * 100, 600); ctx.stroke(); }
-    } else if (selectedStage === 'magma') {
-        ctx.fillStyle = "#4c1111"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ff4500";
-        const wave = Math.sin(animationFrame * 0.05) * 10;
-        ctx.fillRect(0, 550 + wave, canvas.width, 100);
-        ctx.shadowBlur = 40; ctx.shadowColor = "#ff4500";
-        ctx.fillRect(0, 560 + wave, canvas.width, 10);
-        ctx.shadowBlur = 0;
     } else if (selectedStage === 'meteor_flood') {
         ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "rgba(52, 152, 219, 0.6)";
@@ -3860,7 +3841,7 @@ function gameLoop() {
         ];
     }
 
-    const stageY = 400 + (selectedStage === 'magma' ? Math.sin(animationFrame * 0.05) * 30 : 0);
+    const stageY = 400;
     const stageX = (selectedStage === 'under') ? 50 : 250;
     const stageW = (selectedStage === 'under') ? 900 : 500;
 
@@ -3875,8 +3856,6 @@ function gameLoop() {
         groundColor = "#fff"; baseColor = "#bdc3c7";
     } else if (selectedStage === 'under') {
         groundColor = "#333"; baseColor = "#111";
-    } else if (selectedStage === 'magma') {
-        groundColor = "#795548"; baseColor = "#3d2b1f";
     } else if (selectedStage === 'dimension') {
         groundColor = "#00d2ff"; baseColor = "rgba(0, 40, 80, 0.8)";
     } else if (selectedStage === 'meteor_flood') {
