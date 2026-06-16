@@ -86,6 +86,10 @@ body {
     box-shadow: 0 0 25px #fff;
     z-index: 10;
 }
+.char-button.slime {
+    background: linear-gradient(135deg, hsl(145, 63%, 42%), hsl(145, 63%, 25%));
+    border-color: hsl(145, 63%, 49%);
+}
 
 .char-icon { font-size: 32px; margin-bottom: 3px; }
 .char-name { color: #fff; font-size: 11px; font-weight: bold; text-transform: uppercase; }
@@ -589,6 +593,10 @@ body {
                     <div class="char-icon">🤞🔥</div>
                     <div class="char-name">最強コンビ</div>
                 </button>
+                <button id="select-slime" class="char-button slime" data-type="slime">
+                    <div class="char-icon">🟢</div>
+                    <div class="char-name">スライム</div>
+                </button>
             </div>
 
             <!-- 本家風のスロット表示を追加！ -->
@@ -795,7 +803,7 @@ document.querySelectorAll('.stage-button').forEach(button => {
 });
 
 function startGame(type) {
-    const charList = ['robot', 'hero', 'kirby', 'pikachu', 'mario', 'hinohi', 'sans', 'charizard', 'duo', 'pooh'];
+    const charList = ['robot', 'hero', 'kirby', 'pikachu', 'mario', 'hinohi', 'sans', 'charizard', 'duo', 'pooh', 'slime'];
     const cpuType = charList[Math.floor(Math.random() * charList.length)];
 
     isPuckPlaced = false;
@@ -876,6 +884,8 @@ function updateMoveList(type) {
         moves = "最強コンビ：[H]茈・解 / [H+横]蒼・開 / [H+上]赤 / [H+下]領域展開";
     } else if (type === 'pooh') {
         moves = "プーさん：[H]タックル / [H+横]ガトリング / [H+上]ロケット / [H+下]赤麟躍動";
+    } else if (type === 'slime') {
+        moves = "スライム：[H]分裂弾 / [H+横]スライムダッシュ / [H+上]大ジャンプ / [H+下]ネバネバトラップ";
     } else if (type === 'legend') {
         moves = "究極のでんせつ：[H]光線 / [H+横]高速突進 / [H+上]大空上昇 / [H+下]時空崩壊";
     }
@@ -1218,6 +1228,8 @@ class Projectile {
         if (type === 'thunder') return 25;
         if (type === 'explosion') return 18;
         if (type === 'honey') return 8;
+        if (type === 'slime_split') return 8;
+        if (type === 'slime_puddle') return 2;
         return 5;
     }
 
@@ -1451,6 +1463,35 @@ class Projectile {
                 other.honeyStuckTimer = 900;
             }
         }
+        else if (this.type === 'slime_split') {
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            const stageY = 400 + (selectedStage === 'magma' ? Math.sin(animationFrame * 0.05) * 30 : 0);
+            const stageX = (selectedStage === 'under') ? 50 : 250;
+            const stageW = (selectedStage === 'under') ? 900 : 500;
+            if (this.y + this.radius > stageY && this.y < stageY + 50 &&
+                this.x > stageX && this.x < stageX + stageW &&
+                this.vy > 0) {
+                this.y = stageY - this.radius;
+                this.vy = -this.vy * this.bounce;
+            }
+            if (Math.random() < 0.3) {
+                particles.push(new Particle(this.x, this.y, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, 'hsl(120, 70%, 50%)', 2, 10, 'spark'));
+            }
+        }
+        else if (this.type === 'slime_puddle') {
+            const other = (this.owner === player) ? cpu : player;
+            const dx = this.x - (other.x + 12.5);
+            const dy = this.y - (other.y + 20);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < this.radius + 15) {
+                other.vx *= 0.3;
+                if (animationFrame % 10 === 0) {
+                    other.takeDamage(this, this.damage);
+                }
+            }
+        }
         this.life--;
     }
 
@@ -1682,6 +1723,28 @@ class Projectile {
             ctx.fillStyle = '#e67e22'; ctx.fill();
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
             ctx.fillStyle = '#ff3300'; ctx.fill();
+        }
+        else if (this.type === 'slime_split') {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'hsla(120, 80%, 45%, 0.8)';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(this.x - this.radius*0.3, this.y - this.radius*0.3, this.radius*0.2, 0, Math.PI*2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+        }
+        else if (this.type === 'slime_puddle') {
+            ctx.save();
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = 'hsl(120, 75%, 35%)';
+            ctx.beginPath();
+            ctx.ellipse(this.x, this.y + 10, this.radius * 1.5, this.radius * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            if (animationFrame % 8 === 0) {
+                particles.push(new Particle(this.x + (Math.random() - 0.5) * this.radius * 2, this.y + 10, 0, -Math.random() * 1.5, 'hsl(120, 70%, 60%)', 2, 12, 'spark'));
+            }
+            ctx.restore();
         }
 
         ctx.shadowBlur = 0;
@@ -2431,6 +2494,36 @@ class Character {
                 projectiles.push(new Projectile(this.x + 12, this.y + 20, 0, 0, 'rgba(0,0,0,0.8)', 'legend_shadow', this));
             }
         }
+        else if (this.type === 'slime') {
+            this.isAttacking = true;
+            this.attackType = 'special_' + type;
+            if (type === 'neutral') {
+                this.attackTimer = 25;
+                const pDir = this.direction;
+                projectiles.push(new Projectile(this.x + (pDir * 20), this.y + 10, pDir * 6, -3, 'hsl(120, 75%, 45%)', 'slime_split', this));
+            } else if (type === 'side') {
+                this.attackTimer = 30;
+                this.vx = this.direction * 16;
+                this.hitbox = { x: this.x + (this.direction * 20), y: this.y + 5, w: 45, h: 30 };
+                for (let i = 0; i < 5; i++) {
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 20*this.scale, -this.direction * (1 + Math.random() * 2), (Math.random() - 0.5) * 2, 'hsl(120, 70%, 50%)', 3, 10, 'spark'));
+                }
+            } else if (type === 'up') {
+                this.attackTimer = 40;
+                this.vy = -18;
+                this.hitbox = { x: this.x - 5, y: this.y - 15, w: 35, h: 30 };
+                for (let i = 0; i < 8; i++) {
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 35*this.scale, (Math.random() - 0.5) * 4, Math.random() * 2, 'hsl(120, 70%, 50%)', 3, 12, 'spark'));
+                }
+            } else if (type === 'down') {
+                this.attackTimer = 30;
+                const stageY = 400 + (selectedStage === 'magma' ? Math.sin(animationFrame * 0.05) * 30 : 0);
+                const puddle = new Projectile(this.x + 12.5, stageY - 10, 0, 0, 'hsl(120, 75%, 35%)', 'slime_puddle', this);
+                puddle.radius = 35;
+                puddle.life = 180;
+                projectiles.push(puddle);
+            }
+        }
 
         this.vx *= this.scale;
         this.vy *= this.scale;
@@ -2543,6 +2636,7 @@ class Character {
         else if (this.type === 'duo') this.drawDuo();
         else if (this.type === 'allmight') this.drawAllMight();
         else if (this.type === 'legend') this.drawLegend();
+        else if (this.type === 'slime') this.drawSlime();
         else this.drawKirby();
 
         ctx.restore();
@@ -3146,6 +3240,80 @@ class Character {
         ctx.fillStyle = '#e84393'; const legW = (this.isGrounded) ? 0 : Math.sin(animationFrame * 0.3) * 5;
         ctx.beginPath(); ctx.ellipse(this.x + 4, this.y + 34 - legW, 8 * size, 5 * size, 0, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(this.x + 21, this.y + 34 + legW, 8 * size, 5 * size, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    drawSlime() {
+        let stretchX = 1;
+        let stretchY = 1;
+
+        if (!this.isGrounded) {
+            const speed = Math.abs(this.vy);
+            stretchY = 1 + Math.min(0.3, speed * 0.02);
+            stretchX = 1 - Math.min(0.25, speed * 0.015);
+        } else {
+            const speed = Math.abs(this.vx);
+            stretchX = 1 + Math.min(0.25, speed * 0.03);
+            stretchY = 1 - Math.min(0.2, speed * 0.025);
+        }
+
+        if (this.isAttacking) {
+            if (this.attackType === 'special_up') {
+                if (this.attackTimer > 25) {
+                    stretchY = 0.6;
+                    stretchX = 1.4;
+                } else {
+                    stretchY = 1.4;
+                    stretchX = 0.6;
+                }
+            } else if (this.attackType === 'special_side') {
+                stretchX = 1.5;
+                stretchY = 0.7;
+            }
+        }
+
+        ctx.save();
+        const centerX = this.x + 12.5;
+        const centerY = this.y + 20;
+        ctx.translate(centerX, centerY);
+        ctx.scale(stretchX, stretchY);
+
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'hsl(120, 80%, 55%)';
+        ctx.fillStyle = 'rgba(46, 204, 113, 0.85)';
+        ctx.strokeStyle = 'hsl(120, 70%, 45%)';
+        ctx.lineWidth = 2.5;
+
+        ctx.beginPath();
+        ctx.moveTo(-15, 18);
+        ctx.bezierCurveTo(-15, 0, -12, -15, 0, -18);
+        ctx.bezierCurveTo(12, -15, 15, 0, 15, 18);
+        ctx.bezierCurveTo(15, 21, -15, 21, -15, 18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(-4, 0, 2, 0, Math.PI * 2);
+        ctx.arc(4, 0, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(-4.5, -0.5, 0.7, 0, Math.PI * 2);
+        ctx.arc(3.5, -0.5, 0.7, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.5)';
+        ctx.beginPath();
+        ctx.arc(-7, 3, 2.5, 0, Math.PI * 2);
+        ctx.arc(7, 3, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+
+        if (Math.random() < 0.15) {
+            particles.push(new Particle(this.x + Math.random()*25, this.y + 15 + Math.random()*20, (Math.random()-0.5)*1, -Math.random()*2, 'hsl(120, 70%, 55%)', 2.5, 15, 'spark'));
+        }
     }
     drawDeku() {
         const walk = (Math.abs(this.vx) > 0.1) ? Math.sin(animationFrame * 0.2) * 5 : 0;
