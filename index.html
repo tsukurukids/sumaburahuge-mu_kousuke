@@ -90,6 +90,18 @@ body {
     background: linear-gradient(135deg, hsl(145, 63%, 42%), hsl(145, 63%, 25%));
     border-color: hsl(145, 63%, 49%);
 }
+.char-button.magnet {
+    background: linear-gradient(135deg, hsl(200, 70%, 40%), hsl(0, 70%, 40%));
+    border-color: hsl(200, 80%, 60%);
+}
+.char-button.dealer {
+    background: linear-gradient(135deg, hsl(280, 50%, 30%), hsl(280, 50%, 15%));
+    border-color: hsl(280, 70%, 60%);
+}
+.char-button.timetraveler {
+    background: linear-gradient(135deg, hsl(180, 60%, 30%), hsl(220, 60%, 20%));
+    border-color: hsl(180, 80%, 50%);
+}
 
 .char-icon { font-size: 32px; margin-bottom: 3px; }
 .char-name { color: #fff; font-size: 11px; font-weight: bold; text-transform: uppercase; }
@@ -593,6 +605,18 @@ body {
                     <div class="char-icon">🟢</div>
                     <div class="char-name">スライム</div>
                 </button>
+                <button id="select-magnet" class="char-button magnet" data-type="magnet">
+                    <div class="char-icon">🧲</div>
+                    <div class="char-name">磁力</div>
+                </button>
+                <button id="select-dealer" class="char-button dealer" data-type="dealer">
+                    <div class="char-icon">🃏</div>
+                    <div class="char-name">ﾃﾞｰﾗｰ</div>
+                </button>
+                <button id="select-timetraveler" class="char-button timetraveler" data-type="timetraveler">
+                    <div class="char-icon">⏱️</div>
+                    <div class="char-name">時間</div>
+                </button>
             </div>
 
             <!-- 本家風のスロット表示を追加！ -->
@@ -795,7 +819,7 @@ document.querySelectorAll('.stage-button').forEach(button => {
 });
 
 function startGame(type) {
-    const charList = ['robot', 'hero', 'kirby', 'pikachu', 'mario', 'hinohi', 'sans', 'charizard', 'duo', 'pooh', 'slime'];
+    const charList = ['robot', 'hero', 'kirby', 'pikachu', 'mario', 'hinohi', 'sans', 'charizard', 'duo', 'pooh', 'slime', 'magnet', 'dealer', 'timetraveler'];
     const cpuType = charList[Math.floor(Math.random() * charList.length)];
 
     isPuckPlaced = false;
@@ -878,6 +902,12 @@ function updateMoveList(type) {
         moves = "プーさん：[H]タックル / [H+横]ガトリング / [H+上]ロケット / [H+下]赤麟躍動";
     } else if (type === 'slime') {
         moves = "スライム：[H]分裂弾 / [H+横]スライムダッシュ / [H+上]大ジャンプ / [H+下]ネバネバトラップ";
+    } else if (type === 'magnet') {
+        moves = "マグネット：[H]磁力弾 / [H+横]マグネット突進 / [H+上]電磁気浮遊 / [H+下]磁力フィールド";
+    } else if (type === 'dealer') {
+        moves = "ディーラー：[H]トランプ / [H+横]サイコロロール / [H+上]ジョーカーワープ / [H+下]ルーレット";
+    } else if (type === 'timetraveler') {
+        moves = "時間旅行者：[H]タイムストップ / [H+横]時空ダッシュ / [H+上]時間逆行 / [H+下]ディレイボム";
     } else if (type === 'legend') {
         moves = "究極のでんせつ：[H]光線 / [H+横]高速突進 / [H+上]大空上昇 / [H+下]時空崩壊";
     }
@@ -1222,6 +1252,17 @@ class Projectile {
         if (type === 'honey') return 8;
         if (type === 'slime_split') return 8;
         if (type === 'slime_puddle') return 2;
+        if (type === 'magnet_bullet') return 10;
+        if (type === 'magnet_field') return 2;
+        if (type.startsWith('dealer_card_')) {
+            if (type === 'dealer_card_spade') return 15;
+            if (type === 'dealer_card_heart') return 6;
+            if (type === 'dealer_card_diamond') return 10;
+            if (type === 'dealer_card_club') return 8;
+        }
+        if (type === 'dealer_die') return 12;
+        if (type === 'timetraveler_stop') return 5;
+        if (type === 'timetraveler_bomb') return 20;
         return 5;
     }
 
@@ -1484,6 +1525,71 @@ class Projectile {
                 }
             }
         }
+        else if (this.type === 'magnet_bullet') {
+            this.x += this.vx;
+            if (animationFrame % 2 === 0) {
+                const pColor = (this.color.includes('200')) ? 'hsl(200, 90%, 60%)' : 'hsl(0, 90%, 60%)';
+                particles.push(new Particle(this.x, this.y, (Math.random()-0.5)*2, (Math.random()-0.5)*2, pColor, 2, 8, 'electric'));
+            }
+        }
+        else if (this.type === 'magnet_field') {
+            if (this.owner) {
+                this.x = this.owner.x + 12.5;
+                this.y = this.owner.y + 20;
+            }
+            this.radius = Math.min(150, this.radius + 5);
+            const other = (this.owner === player) ? cpu : player;
+            const dx = this.x - (other.x + 12.5);
+            const dy = this.y - (other.y + 20);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < this.radius) {
+                if (this.life > 15) {
+                    other.vx += dx * 0.08;
+                    other.vy += dy * 0.08;
+                    if (Math.random() < 0.3) {
+                        particles.push(new Particle(other.x + 12.5, other.y + 20, (Math.random()-0.5)*3, (Math.random()-0.5)*3, 'hsl(200, 90%, 55%)', 2, 10, 'electric'));
+                    }
+                } else if (this.life === 15) {
+                    other.takeDamage(this, 14);
+                    const kDir = dx > 0 ? -1 : 1;
+                    other.vx = kDir * 15;
+                    other.vy = -8;
+                }
+            }
+        }
+        else if (this.type.startsWith('dealer_card_')) {
+            this.x += this.vx;
+            if (Math.random() < 0.25) {
+                particles.push(new Particle(this.x, this.y, (Math.random()-0.5)*1, (Math.random()-0.5)*1, this.color, 2, 12, 'spark'));
+            }
+        }
+        else if (this.type === 'dealer_die') {
+            this.vy += 0.35;
+            this.x += this.vx;
+            this.y += this.vy;
+            const stageY = 400;
+            const stageX = (selectedStage === 'under') ? 50 : 250;
+            const stageW = (selectedStage === 'under') ? 900 : 500;
+            if (this.y + this.radius > stageY && this.y < stageY + 50 &&
+                this.x > stageX && this.x < stageX + stageW &&
+                this.vy > 0) {
+                this.y = stageY - this.radius;
+                this.vy = -this.vy * 0.6;
+            }
+        }
+        else if (this.type === 'timetraveler_stop') {
+            this.x += this.vx;
+            if (animationFrame % 2 === 0) {
+                particles.push(new Particle(this.x, this.y, (Math.random()-0.5)*2, (Math.random()-0.5)*2, '#00e5ff', 2, 10, 'space'));
+            }
+        }
+        else if (this.type === 'timetraveler_bomb') {
+            if (this.life === 1) {
+                this.type = 'explosion';
+                this.radius = 75;
+                this.life = 12;
+            }
+        }
         this.life--;
     }
 
@@ -1727,15 +1833,104 @@ class Projectile {
             ctx.fill();
         }
         else if (this.type === 'slime_puddle') {
-            ctx.save();
-            ctx.globalAlpha = 0.7;
-            ctx.fillStyle = 'hsl(120, 75%, 35%)';
+        }
+        else if (this.type === 'magnet_bullet') {
             ctx.beginPath();
-            ctx.ellipse(this.x, this.y + 10, this.radius * 1.5, this.radius * 0.4, 0, 0, Math.PI * 2);
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
             ctx.fill();
-            if (animationFrame % 8 === 0) {
-                particles.push(new Particle(this.x + (Math.random() - 0.5) * this.radius * 2, this.y + 10, 0, -Math.random() * 1.5, 'hsl(120, 70%, 60%)', 2, 12, 'spark'));
-            }
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+        }
+        else if (this.type === 'magnet_field') {
+            ctx.save();
+            ctx.globalAlpha = 0.25;
+            let grad = ctx.createRadialGradient(this.x, this.y, 10, this.x, this.y, this.radius);
+            grad.addColorStop(0, 'rgba(0, 150, 255, 0.8)');
+            grad.addColorStop(0.5, 'rgba(255, 0, 100, 0.5)');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius - 5, 0, Math.PI*2);
+            ctx.stroke();
+        }
+        else if (this.type.startsWith('dealer_card_')) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(animationFrame * 0.15);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-6, -10, 12, 20);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-6, -10, 12, 20);
+            ctx.fillStyle = this.color;
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let suitSymbol = '♠';
+            if (this.type.includes('heart')) suitSymbol = '♥';
+            else if (this.type.includes('diamond')) suitSymbol = '♦';
+            else if (this.type.includes('club')) suitSymbol = '♣';
+            ctx.fillText(suitSymbol, 0, 0);
+            ctx.restore();
+        }
+        else if (this.type === 'dealer_die') {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(animationFrame * 0.1);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-9, -9, 18, 18);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-9, -9, 18, 18);
+            ctx.fillStyle = '#000';
+            const val = this.dieValue || 1;
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(val, 0, 0);
+            ctx.restore();
+        }
+        else if (this.type === 'timetraveler_stop') {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.strokeStyle = '#00e5ff';
+            ctx.lineWidth = 2.5;
+            ctx.fillStyle = 'rgba(0, 229, 255, 0.2)';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius + 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(0, -this.radius * 0.7);
+            ctx.moveTo(0, 0); ctx.lineTo(this.radius * 0.5, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+        else if (this.type === 'timetraveler_bomb') {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.fillStyle = '#111';
+            ctx.fillRect(-15, -12, 30, 24);
+            ctx.strokeStyle = '#00e5ff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-15, -12, 30, 24);
+            ctx.fillStyle = '#00e5ff';
+            ctx.font = '11px Courier New';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const secondsLeft = Math.ceil(this.life / 60);
+            ctx.fillText('0:0' + secondsLeft, 0, 0);
             ctx.restore();
         }
 
@@ -1824,6 +2019,11 @@ class Character {
         this.honeyStuckTimer = 0;
         this.isRedMode = false;
 
+        this.magnetColorState = 'blue';
+        this.speedTimer = 0;
+        this.redModeTimer = 0;
+        this.timeHistory = [];
+
         this.history = [];
         for (let i = 0; i < 15; i++) this.history.push({ x: this.x, y: this.y });
 
@@ -1871,6 +2071,18 @@ class Character {
     }
 
     update(target = null) {
+        if (this.speedTimer > 0) {
+            this.speedTimer--;
+            if (this.speedTimer === 0) this.speed = 6 * this.scale;
+        }
+        if (this.redModeTimer > 0) {
+            this.redModeTimer--;
+            if (this.redModeTimer === 0) this.isRedMode = false;
+        }
+        if (!this.timeHistory) this.timeHistory = [];
+        this.timeHistory.push({ x: this.x, y: this.y, percent: this.damagePercent });
+        if (this.timeHistory.length > 120) this.timeHistory.shift();
+
         this.history.push({ x: this.x, y: this.y, dir: this.direction, grounded: this.isGrounded, attacking: this.isAttacking, atkType: this.attackType });
         if (this.history.length > 15) this.history.shift();
 
@@ -2102,8 +2314,25 @@ class Character {
                     }
                 } else {
                     let damage = p.damage;
+                    if (p.type === 'dealer_die') {
+                        damage = 4 + (p.dieValue || 1) * 3;
+                    }
                     if (p.owner && p.owner.type === 'duo') damage *= 1.2;
                     this.takeDamage(p, damage);
+
+                    if (p.type === 'dealer_card_heart' && p.owner) {
+                        p.owner.damagePercent = Math.max(0, p.owner.damagePercent - 8);
+                        const oId = p.owner.isPlayer ? 'player-percent' : 'cpu-percent';
+                        const oEl = document.getElementById(oId);
+                        if (oEl) oEl.innerText = Math.floor(p.owner.damagePercent) + '%';
+                    }
+                    else if (p.type === 'dealer_card_club') {
+                        projectiles.push(new Projectile(p.x, p.y, 0, 0, '#e67e22', 'explosion', p.owner));
+                    }
+                    else if (p.type === 'timetraveler_stop') {
+                        this.stunTimer = 90;
+                    }
+
                     if (p.type !== 'explosion' && p.type !== 'duo_aka' && p.type !== 'legend_aka') p.life = 0;
                 }
             }
@@ -2513,6 +2742,130 @@ class Character {
                 projectiles.push(puddle);
             }
         }
+        else if (this.type === 'magnet') {
+            this.isAttacking = true;
+            this.attackType = 'special_' + type;
+            if (type === 'neutral') {
+                this.attackTimer = 25;
+                if (!this.magnetColorState) this.magnetColorState = 'blue';
+                this.magnetColorState = (this.magnetColorState === 'blue') ? 'red' : 'blue';
+                const pColor = (this.magnetColorState === 'blue') ? 'hsl(200, 90%, 55%)' : 'hsl(0, 90%, 55%)';
+                projectiles.push(new Projectile(this.x + (this.direction * 20), this.y + 10, this.direction * 9, 0, pColor, 'magnet_bullet', this));
+            } else if (type === 'side') {
+                this.attackTimer = 25;
+                this.vx = this.direction * 18;
+                this.hitbox = { x: this.x + (this.direction * 20), y: this.y, w: 40, h: 40 };
+                for (let i = 0; i < 6; i++) {
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 20*this.scale, -this.direction * (1 + Math.random()*2), (Math.random()-0.5)*2, 'hsl(200, 90%, 55%)', 2.5, 10, 'electric'));
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 20*this.scale, -this.direction * (1 + Math.random()*2), (Math.random()-0.5)*2, 'hsl(0, 90%, 55%)', 2.5, 10, 'electric'));
+                }
+            } else if (type === 'up') {
+                this.attackTimer = 35;
+                this.vy = -18;
+                this.vx = this.direction * 5;
+                for (let i = 0; i < 8; i++) {
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 35*this.scale, (Math.random()-0.5)*3, Math.random()*2, 'hsl(200, 90%, 55%)', 2, 12, 'electric'));
+                }
+            } else if (type === 'down') {
+                this.attackTimer = 40;
+                const field = new Projectile(this.x + 12.5, this.y + 20, 0, 0, 'rgba(0, 150, 255, 0.4)', 'magnet_field', this);
+                field.radius = 10;
+                field.life = 60;
+                projectiles.push(field);
+            }
+        }
+        else if (this.type === 'dealer') {
+            this.isAttacking = true;
+            this.attackType = 'special_' + type;
+            if (type === 'neutral') {
+                this.attackTimer = 20;
+                const suits = ['spade', 'heart', 'diamond', 'club'];
+                const suit = suits[Math.floor(Math.random() * suits.length)];
+                let color = '#fff';
+                if (suit === 'heart' || suit === 'diamond') color = '#e74c3c';
+                else color = '#2c3e50';
+                projectiles.push(new Projectile(this.x + (this.direction * 20), this.y + 10, this.direction * 10, 0, color, 'dealer_card_' + suit, this));
+            } else if (type === 'side') {
+                this.attackTimer = 30;
+                const dieVal = Math.floor(Math.random() * 6) + 1;
+                const p = new Projectile(this.x + (this.direction * 20), this.y + 10, this.direction * 7, -4, '#fff', 'dealer_die', this);
+                p.dieValue = dieVal;
+                p.radius = 9;
+                p.life = 120;
+                projectiles.push(p);
+            } else if (type === 'up') {
+                this.attackTimer = 20;
+                for (let i = 0; i < 12; i++) {
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 20*this.scale, (Math.random()-0.5)*5, (Math.random()-0.5)*5, '#9b59b6', 2.5, 12, 'spark'));
+                }
+                this.y -= 180 * this.scale;
+                this.vy = 0;
+                for (let i = 0; i < 12; i++) {
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 20*this.scale, (Math.random()-0.5)*5, (Math.random()-0.5)*5, '#fff', 2.5, 12, 'spark'));
+                }
+            } else if (type === 'down') {
+                this.attackTimer = 40;
+                const roll = Math.random();
+                if (roll < 0.35) {
+                    this.isRedMode = true;
+                    this.redModeTimer = 300;
+                    for (let i = 0; i < 10; i++) {
+                        particles.push(new Particle(this.x + 12.5*this.scale, this.y + 15*this.scale, (Math.random()-0.5)*3, -Math.random()*3, '#e74c3c', 3, 15, 'fire'));
+                    }
+                } else if (roll < 0.70) {
+                    this.speed = 10 * this.scale;
+                    this.speedTimer = 300;
+                    for (let i = 0; i < 10; i++) {
+                        particles.push(new Particle(this.x + 12.5*this.scale, this.y + 15*this.scale, (Math.random()-0.5)*3, -Math.random()*3, '#f1c40f', 3, 15, 'spark'));
+                    }
+                } else {
+                    this.stunTimer = 60;
+                    for (let i = 0; i < 10; i++) {
+                        particles.push(new Particle(this.x + 12.5*this.scale, this.y + 15*this.scale, (Math.random()-0.5)*3, -Math.random()*3, '#7f8c8d', 3, 15, 'smoke'));
+                    }
+                }
+            }
+        }
+        else if (this.type === 'timetraveler') {
+            this.isAttacking = true;
+            this.attackType = 'special_' + type;
+            if (type === 'neutral') {
+                this.attackTimer = 25;
+                projectiles.push(new Projectile(this.x + (this.direction * 20), this.y + 10, this.direction * 9, 0, '#00e5ff', 'timetraveler_stop', this));
+            } else if (type === 'side') {
+                this.attackTimer = 20;
+                this.vx = this.direction * 22;
+                this.hitbox = { x: this.x + (this.direction * 20), y: this.y, w: 40, h: 40 };
+                for (let i = 0; i < 8; i++) {
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 20*this.scale, -this.direction * (1 + Math.random()*2), (Math.random()-0.5)*2, '#00e5ff', 3, 10, 'space'));
+                }
+            } else if (type === 'up') {
+                this.attackTimer = 25;
+                if (this.timeHistory && this.timeHistory.length > 0) {
+                    const pastState = this.timeHistory[0];
+                    this.x = pastState.x;
+                    this.y = pastState.y;
+                    this.vy = 0;
+                    this.vx = 0;
+                    if (this.damagePercent > pastState.percent) {
+                        this.damagePercent = pastState.percent;
+                        const displayId = this.isPlayer ? 'player-percent' : 'cpu-percent';
+                        const el = document.getElementById(displayId);
+                        if (el) el.innerText = Math.floor(this.damagePercent) + '%';
+                    }
+                    this.timeHistory = [];
+                }
+                for (let i = 0; i < 15; i++) {
+                    particles.push(new Particle(this.x + 12.5*this.scale, this.y + 20*this.scale, (Math.random()-0.5)*5, (Math.random()-0.5)*5, '#00e5ff', 3, 15, 'space'));
+                }
+            } else if (type === 'down') {
+                this.attackTimer = 30;
+                const bomb = new Projectile(this.x + 12.5, this.y + 20, 0, 0, '#00e5ff', 'timetraveler_bomb', this);
+                bomb.radius = 12;
+                bomb.life = 180;
+                projectiles.push(bomb);
+            }
+        }
 
         this.vx *= this.scale;
         this.vy *= this.scale;
@@ -2626,6 +2979,9 @@ class Character {
         else if (this.type === 'allmight') this.drawAllMight();
         else if (this.type === 'legend') this.drawLegend();
         else if (this.type === 'slime') this.drawSlime();
+        else if (this.type === 'magnet') this.drawMagnet();
+        else if (this.type === 'dealer') this.drawDealer();
+        else if (this.type === 'timetraveler') this.drawTimeTraveler();
         else this.drawKirby();
 
         ctx.restore();
@@ -3302,6 +3658,92 @@ class Character {
 
         if (Math.random() < 0.15) {
             particles.push(new Particle(this.x + Math.random()*25, this.y + 15 + Math.random()*20, (Math.random()-0.5)*1, -Math.random()*2, 'hsl(120, 70%, 55%)', 2.5, 15, 'spark'));
+        }
+    }
+    drawMagnet() {
+        const bounce = Math.sin(animationFrame * 0.15) * 3;
+        const walk = (Math.abs(this.vx) > 0.1) ? Math.sin(animationFrame * 0.2) * 4 : 0;
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(this.x + 12.5, this.y + 10 + bounce, 10, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = '#3498db';
+        ctx.beginPath();
+        ctx.arc(this.x + 12.5, this.y + 10 + bounce, 10, 0, Math.PI);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(this.x + 2.5, this.y + 9 + bounce, 20, 2);
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(this.x + 8, this.y + 13 + bounce, 1.5, 0, Math.PI * 2);
+        ctx.arc(this.x + 17, this.y + 13 + bounce, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#7f8c8d';
+        ctx.fillRect(this.x + 5, this.y + 20 + bounce, 15, 14);
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(this.x + 1, this.y + 20 + bounce, 4, 6);
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(this.x + 20, this.y + 20 + bounce, 4, 6);
+        ctx.fillStyle = '#555';
+        ctx.fillRect(this.x + 4, this.y + 34 + bounce + walk, 6, 6);
+        ctx.fillRect(this.x + 15, this.y + 34 + bounce - walk, 6, 6);
+    }
+    drawDealer() {
+        const walk = (Math.abs(this.vx) > 0.1) ? Math.sin(animationFrame * 0.2) * 4 : 0;
+        ctx.fillStyle = '#1e1e24';
+        ctx.fillRect(this.x + 3, this.y - 12, 19, 12);
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(this.x + 3, this.y, 19, 2);
+        ctx.fillStyle = '#1e1e24';
+        ctx.fillRect(this.x, this.y + 2, 25, 2);
+        ctx.fillStyle = '#ffd1a9';
+        ctx.fillRect(this.x + 5, this.y + 4, 15, 12);
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(this.x + 8, this.y + 7, 2, 2);
+        ctx.fillRect(this.x + 15, this.y + 7, 2, 2);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(this.x + 10, this.y + 11, 5, 2);
+        ctx.fillStyle = '#1e1e24';
+        ctx.fillRect(this.x + 3, this.y + 16, 19, 18);
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(this.x + 10, this.y + 16);
+        ctx.lineTo(this.x + 15, this.y + 16);
+        ctx.lineTo(this.x + 12.5, this.y + 22);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(this.x + 11, this.y + 18, 2, 0, Math.PI * 2);
+        ctx.arc(this.x + 14, this.y + 18, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(this.x + 4, this.y + 34 + walk, 7, 6);
+        ctx.fillRect(this.x + 14, this.y + 34 - walk, 7, 6);
+    }
+    drawTimeTraveler() {
+        const bounce = Math.sin(animationFrame * 0.2) * 2;
+        const walk = (Math.abs(this.vx) > 0.1) ? Math.sin(animationFrame * 0.25) * 4 : 0;
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(this.x + 4, this.y + bounce, 17, 16);
+        ctx.fillStyle = '#00e5ff';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00e5ff';
+        ctx.fillRect(this.x + 4, this.y + 5 + bounce, 17, 4);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#111';
+        ctx.fillRect(this.x + 4, this.y + 16 + bounce, 17, 18);
+        ctx.fillStyle = '#00e5ff';
+        ctx.fillRect(this.x + 7, this.y + 20 + bounce, 2, 10);
+        ctx.fillRect(this.x + 16, this.y + 20 + bounce, 2, 10);
+        ctx.beginPath();
+        ctx.arc(this.x + 12.5, this.y + 24 + bounce, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#222';
+        ctx.fillRect(this.x + 4, this.y + 34 + bounce + walk, 6, 6);
+        ctx.fillRect(this.x + 15, this.y + 34 + bounce - walk, 6, 6);
+        if (Math.abs(this.vx) > 0.1 && Math.random() < 0.2) {
+            particles.push(new Particle(this.x + 12.5, this.y + 20, -this.direction * 2, (Math.random()-0.5)*2, '#00e5ff', 2, 10, 'space'));
         }
     }
     drawDeku() {
