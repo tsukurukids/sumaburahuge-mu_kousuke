@@ -2029,16 +2029,20 @@ class Character {
 
         projectiles.forEach(p => {
             if (p.life > 0 && p.owner !== this && this.checkHit({ x: p.x - p.radius, y: p.y - p.radius, w: p.radius * 2, h: p.radius * 2 }, this)) {
-                let damage = p.damage;
-                if (p.owner && p.owner.type === 'duo') damage *= 1.2;
-                if (p.type === 'duo_domain') {
-                    this.stunTimer = 15;
-                    const dx = p.x - (this.x + 12.5);
-                    const dy = p.y - (this.y + 20);
-                    this.vx += dx * 0.1; this.vy += dy * 0.1;
+                // 領域系（duo_domain, honey_domain）は毎フレームの衝突ダメージ（takeDamage）を発生させない（内部アップデートでダメージを個別に与えるため）
+                if (p.type === 'duo_domain' || p.type === 'honey_domain') {
+                    if (p.type === 'duo_domain') {
+                        this.stunTimer = 15;
+                        const dx = p.x - (this.x + 12.5);
+                        const dy = p.y - (this.y + 20);
+                        this.vx += dx * 0.1; this.vy += dy * 0.1;
+                    }
+                } else {
+                    let damage = p.damage;
+                    if (p.owner && p.owner.type === 'duo') damage *= 1.2;
+                    this.takeDamage(p, damage);
+                    if (p.type !== 'explosion' && p.type !== 'duo_aka' && p.type !== 'legend_aka') p.life = 0;
                 }
-                this.takeDamage(p, damage);
-                if (p.type !== 'explosion' && p.type !== 'duo_aka' && p.type !== 'legend_aka' && p.type !== 'duo_domain' && p.type !== 'honey_domain') p.life = 0;
             }
         });
     }
